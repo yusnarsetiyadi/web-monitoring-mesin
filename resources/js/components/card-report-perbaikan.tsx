@@ -48,7 +48,17 @@ function CardReportPerbaikan() {
         window.location.href = `/report/exportPerbaikan?${params.toString()}`;
     }
 
+    const handleSubmitPdf = (e: React.FormEvent) => {
+        e.preventDefault();
 
+        // Method 1: Menggunakan window.location untuk download
+        const params = new URLSearchParams({
+            month: data.month,
+            year: data.year
+        });
+        
+        window.location.href = `/report/exportPerbaikan/pdf?${params.toString()}`;
+    }
 
     return (
     <>
@@ -57,7 +67,7 @@ function CardReportPerbaikan() {
                 <CardTitle>Export Laporan Perbaikan Perbulan</CardTitle>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit}>
+                <form>
                     <div className="mb-4">
                         <Label htmlFor="month" className="block text-gray-700 font-bold mb-2">Bulan</Label>
                             <Select value={data.month}
@@ -105,13 +115,22 @@ function CardReportPerbaikan() {
                         </div>
                         <div className="flex items-center justify-between">
                             <Button
-                                type="submit"
-                                onSubmit={handleSubmit}
+                                type="button"
+                                onClick={handleSubmit}
                                 variant="secondary"
                                 disabled={processing}
                                 className='cursor-pointer'
                             > 
                                 {processing ? 'Mengekspor...' : 'Ekspor ke Excel'}
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={handleSubmitPdf}
+                                variant="secondary"
+                                disabled={processing}
+                                className='cursor-pointer'
+                            > 
+                                {processing ? 'Mengekspor...' : 'Ekspor ke PDF'}
                             </Button>
                         </div>
                     </form>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExcelExportController;
+use App\Http\Controllers\PdfExportController;
 use App\Http\Controllers\KerusakanController;
 use App\Http\Controllers\MesinController;
 use App\Http\Controllers\PerbaikanController;
@@ -51,8 +52,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/report/export', [ExcelExportController::class, 'reportKerusakan'])->name('report.export.get');
     Route::post('/report/export', [ExcelExportController::class, 'reportKerusakan'])->name('report.export.post');
 
+    Route::get('/report/export/pdf', [PdfExportController::class, 'reportKerusakan'])->name('report.export.get');
+    Route::post('/report/export/pdf', [PdfExportController::class, 'reportKerusakan'])->name('report.export.post');
+
     Route::get('/report/exportPerbaikan', [ExcelExportController::class, 'reportPerbaikan'])->name('report.perbaikan.export.get');
     Route::post('/report/exportPerbaikan', [ExcelExportController::class, 'reportPerbaikan'])->name('report.perbaikan.export.post');
+
+    Route::get('/report/exportPerbaikan/pdf', [PdfExportController::class, 'reportPerbaikan'])->name('report.perbaikan.export.get');
+    Route::post('/report/exportPerbaikan/pdf', [PdfExportController::class, 'reportPerbaikan'])->name('report.perbaikan.export.post');
 });
 
 
