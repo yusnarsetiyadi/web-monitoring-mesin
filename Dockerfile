@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_mysql gd zip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js (supaya npm run build bisa jalan DI VPS)
+# Install Node.js (supaya npm run build bisa jalan DI Docker build)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
@@ -19,15 +19,23 @@ RUN a2enmod rewrite
 # Set working dir
 WORKDIR /var/www/html/deploy/monitoringmesin
 
-# Copy Laravel files ke dalam container
-COPY . /var/www/html/deploy/monitoringmesin
+# Copy semua kode Laravel
+COPY . .
 
-# Copy storage
-COPY storage /var/www/html/deploy/monitoringmesin/storage
-
-# Install Composer
+# Install composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader
+
+# ========== FRONTEND BUILD OTOMATIS ==========
+WORKDIR /var/www/html/deploy/monitoringmesin
+
+# Install Node dependencies dan build assets
+RUN npm install \
+    && npm run build \
+    && rm -rf node_modules
+# (node_modules dihapus agar image lebih kecil)
+
+# ========== END FRONTEND BUILD ==========
 
 # Set Apache DocumentRoot ke public/
 RUN sed -i 's!/var/www/html!/var/www/html/deploy/monitoringmesin/public!' /etc/apache2/sites-available/000-default.conf
