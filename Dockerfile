@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_mysql gd zip \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Node.js (supaya npm run build bisa jalan DI VPS)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
 # Enable Apache rewrite
 RUN a2enmod rewrite
 
@@ -18,6 +22,7 @@ WORKDIR /var/www/html/deploy/monitoringmesin
 # Copy Laravel files ke dalam container
 COPY . /var/www/html/deploy/monitoringmesin
 
+# Copy storage
 COPY storage /var/www/html/deploy/monitoringmesin/storage
 
 # Install Composer
