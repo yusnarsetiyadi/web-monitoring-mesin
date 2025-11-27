@@ -18,6 +18,8 @@ WORKDIR /var/www/html/deploy/monitoringmesin
 # Copy Laravel files ke dalam container
 COPY . /var/www/html/deploy/monitoringmesin
 
+COPY storage /var/www/html/deploy/monitoringmesin/storage
+
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader

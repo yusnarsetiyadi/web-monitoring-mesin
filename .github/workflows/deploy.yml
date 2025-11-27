@@ -64,6 +64,6 @@ jobs:
             docker exec monitoring-mesin-app php artisan config:clear
             docker exec monitoring-mesin-app php artisan cache:clear
             docker exec monitoring-mesin-app php artisan config:cache
-            docker exec monitoring-mesin-app rm -rf /var/www/html/deploy/monitoringmesin/storage/app/public
-            docker cp /var/www/html/deploy/monitoringmesin/storage/app/public monitoring-mesin-app:/var/www/html/deploy/monitoringmesin/storage/app/
+            docker exec monitoring-mesin-app mkdir -p /var/www/html/deploy/monitoringmesin/storage/app/public
+            docker cp /var/www/html/deploy/monitoringmesin/storage/app/public/. monitoring-mesin-app:/var/www/html/deploy/monitoringmesin/storage/app/public/
             docker exec monitoring-mesin-app php artisan storage:link
