@@ -28,6 +28,9 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: yusnars/monitoring-mesin-app:latest
+          build-args: |
+            APP_URL=https://monitoringmesin.yusnar.my.id
+            ASSET_URL=https://monitoringmesin.yusnar.my.id
 
   deploy:
     runs-on: ubuntu-latest

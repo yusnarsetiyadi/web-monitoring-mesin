@@ -1,5 +1,11 @@
 FROM php:8.3-apache
 
+ARG APP_URL
+ARG ASSET_URL
+
+ENV APP_URL=${APP_URL}
+ENV ASSET_URL=${ASSET_URL}
+
 # Install dependencies + mysql client
 RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
