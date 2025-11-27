@@ -12,6 +12,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Build frontend
+        run: npm run build
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -49,7 +60,6 @@ jobs:
               -p 7000:80 \
               -v /var/www/html/deploy/monitoringmesin/.env:/var/www/html/deploy/monitoringmesin/.env \
               yusnars/monitoring-mesin-app:latest
-            docker exec monitoring-mesin-app npm run build
             docker exec monitoring-mesin-app php artisan migrate --force
             docker exec monitoring-mesin-app php artisan config:clear
             docker exec monitoring-mesin-app php artisan cache:clear
