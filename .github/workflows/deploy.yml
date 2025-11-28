@@ -33,6 +33,7 @@ jobs:
             ASSET_URL=https://monitoringmesin.yusnar.my.id
             VITE_SERVER_ORIGIN=https://monitoringmesin.yusnar.my.id
             VITE_APP_URL=https://monitoringmesin.yusnar.my.id
+          no-cache: true
 
   deploy:
     runs-on: ubuntu-latest
