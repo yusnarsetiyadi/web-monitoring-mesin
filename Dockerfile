@@ -39,6 +39,11 @@ RUN composer install --no-dev --optimize-autoloader
 # ========== FRONTEND BUILD OTOMATIS ==========
 WORKDIR /var/www/html/deploy/monitoringmesin
 
+RUN echo "VITE_APP_URL=${VITE_APP_URL}" >> .env.production && \
+    echo "VITE_SERVER_ORIGIN=${VITE_SERVER_ORIGIN}" >> .env.production && \
+    echo "APP_URL=${APP_URL}" >> .env.production && \
+    echo "ASSET_URL=${ASSET_URL}" >> .env.production
+
 # Install Node dependencies dan build assets
 RUN npm install \
     && npm run build \
