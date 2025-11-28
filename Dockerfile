@@ -2,13 +2,13 @@ FROM php:8.3-apache
 
 ARG APP_URL
 ARG ASSET_URL
-ARG VITE_SERVER_ORIGIN
 ARG VITE_APP_URL
+ARG VITE_SERVER_ORIGIN
 
 ENV APP_URL=${APP_URL}
 ENV ASSET_URL=${ASSET_URL}
-ENV VITE_SERVER_ORIGIN=${VITE_SERVER_ORIGIN}
 ENV VITE_APP_URL=${VITE_APP_URL}
+ENV VITE_SERVER_ORIGIN=${VITE_SERVER_ORIGIN}
 
 # Install dependencies + mysql client
 RUN apt-get update && apt-get install -y \
@@ -33,10 +33,10 @@ WORKDIR /var/www/html/deploy/monitoringmesin
 COPY . .
 
 RUN cp .env.example .env && \
-    echo "VITE_APP_URL=${VITE_APP_URL}" >> .env && \
-    echo "VITE_SERVER_ORIGIN=${VITE_SERVER_ORIGIN}" >> .env && \
     echo "APP_URL=${APP_URL}" >> .env && \
-    echo "ASSET_URL=${ASSET_URL}" >> .env
+    echo "ASSET_URL=${ASSET_URL}" >> .env && \
+    echo "VITE_APP_URL=${VITE_APP_URL}" >> .env && \
+    echo "VITE_SERVER_ORIGIN=${VITE_SERVER_ORIGIN}" >> .env
 
 # Install composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
