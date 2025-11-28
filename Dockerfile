@@ -3,10 +3,12 @@ FROM php:8.3-apache
 ARG APP_URL
 ARG ASSET_URL
 ARG VITE_SERVER_ORIGIN
+ARG VITE_APP_URL
 
 ENV APP_URL=${APP_URL}
 ENV ASSET_URL=${ASSET_URL}
 ENV VITE_SERVER_ORIGIN=${VITE_SERVER_ORIGIN}
+ENV VITE_APP_URL=${VITE_APP_URL}
 
 # Install dependencies + mysql client
 RUN apt-get update && apt-get install -y \
