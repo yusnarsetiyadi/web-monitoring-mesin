@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>White Box Testing - Monitoring Apps</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #2c5f2d;
+        }
+        .code-ref {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-left: 4px solid #2c5f2d;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #2c5f2d;
+            color: white;
+        }
+        .diagram {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+    <h1>DOKUMENTASI WHITE BOX TESTING</h1>
+    <h2>Monitoring Apps - Sistem Manajemen Kerusakan Mesin</h2>
+
+    <h3>1. Dashboard Index</h3>
+
+    <div class="code-ref">
+        <strong>File:</strong> app/Http/Controllers/DashboardController.php<br>
+        <strong>Function:</strong> index()<br>
+        <strong>Lines:</strong> 12-34
+    </div>
+
+    <h4>A. Flowchart</h4>
+    <div class="diagram">
+@startuml flowchart_dashboard
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Query Jumlah Mesin (Mesin::count());
+:Query Jumlah User (User::count());
+:Query Total Perbaikan (Perbaikan::count());
+:Query Kerusakan Bulan Ini (Kerusakan::whereMonth);
+:Query List Teknisi (User::where('teknisi'));
+:Query Kerusakan Terbaru (Kerusakan::with('mesin')->latest());
+:Render Inertia View ('dashboard');
+stop
+@enduml
+    </div>
+
+    <h4>B. Flow Graph</h4>
+    <div class="diagram">
+@startuml flowgraph_dashboard
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nQuery Mesin"];
+  5 [label="5\nQuery User"];
+  6 [label="6\nQuery Perbaikan"];
+  7 [label="7\nQuery Kerusakan Bulan"];
+  8 [label="8\nQuery Teknisi"];
+  9 [label="9\nQuery Kerusakan Terbaru"];
+  10 [label="10\nRender View"];
+  11 [label="11\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5;
+  5 -> 6;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9;
+  9 -> 10;
+  10 -> 11;
+}
+@enduml
+    </div>
+
+    <h4>C. Cyclomatic Complexity</h4>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Jumlah Node (N)</td>
+            <td>11</td>
+        </tr>
+        <tr>
+            <td>Jumlah Edge (E)</td>
+            <td>10</td>
+        </tr>
+        <tr>
+            <td>Jumlah Predicate (P)</td>
+            <td>0</td>
+        </tr>
+        <tr>
+            <td><strong>Cyclomatic Complexity</strong><br>V(G) = E - N + 2</td>
+            <td><strong>1</strong></td>
+        </tr>
+    </table>
+
+    <h4>D. Basis Path Testing</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Path</th>
+                <th>Jalur</th>
+                <th>Test Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Path 1</td>
+                <td>1→2→3→4→5→6→7→8→9→10→11</td>
+                <td>User login, dashboard tampil dengan semua data</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h3>2. Mesin Store (Tambah Mesin)</h3>
+
+    <div class="code-ref">
+        <strong>File:</strong> app/Http/Controllers/MesinController.php<br>
+        <strong>Function:</strong> store()<br>
+        <strong>Lines:</strong> 31-58
+    </div>
+
+    <h4>A. Flowchart</h4>
+    <div class="diagram">
+@startuml flowchart_mesin_store
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Generate Next ID (Mesin::max('id') + 1);
+  if (Has File gambar_mesin?) then (Ya)
+    :Store Image (->store('mesin_images', 'public'));
+  else (Tidak)
+    :Set gambarPath = null;
+  endif
+  :Create Mesin Record (Mesin::create());
+  :Redirect Back with Success;
+  stop
+endif
+@enduml
+    </div>
+
+    <h4>B. Flow Graph</h4>
+    <div class="diagram">
+@startuml flowgraph_mesin_store
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nGenerate ID"];
+  7 [label="7\nCheck File"];
+  8 [label="8\nStore Image"];
+  9 [label="9\nSet Null"];
+  10 [label="10\nCreate Record"];
+  11 [label="11\nSuccess"];
+  12 [label="12\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 12;
+  6 -> 7;
+  7 -> 8 [label="has file"];
+  7 -> 9 [label="no file"];
+  8 -> 10;
+  9 -> 10;
+  10 -> 11;
+  11 -> 12;
+}
+@enduml
+    </div>
+
+    <h4>C. Cyclomatic Complexity</h4>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Jumlah Node (N)</td>
+            <td>12</td>
+        </tr>
+        <tr>
+            <td>Jumlah Edge (E)</td>
+            <td>13</td>
+        </tr>
+        <tr>
+            <td>Jumlah Predicate (P)</td>
+            <td>2</td>
+        </tr>
+        <tr>
+            <td><strong>Cyclomatic Complexity</strong><br>V(G) = E - N + 2</td>
+            <td><strong>3</strong></td>
+        </tr>
+    </table>
+
+    <h4>D. Basis Path Testing</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Path</th>
+                <th>Jalur</th>
+                <th>Test Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Path 1</td>
+                <td>1→2→3→4→5→12</td>
+                <td>Validasi gagal (field kosong/tidak valid)</td>
+            </tr>
+            <tr>
+                <td>Path 2</td>
+                <td>1→2→3→4→6→7→8→10→11→12</td>
+                <td>Validasi sukses, ada gambar</td>
+            </tr>
+            <tr>
+                <td>Path 3</td>
+                <td>1→2→3→4→6→7→9→10→11→12</td>
+                <td>Validasi sukses, tidak ada gambar</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h3>3. Kerusakan Store (Lapor Kerusakan)</h3>
+
+    <div class="code-ref">
+        <strong>File:</strong> app/Http/Controllers/KerusakanController.php<br>
+        <strong>Function:</strong> store()<br>
+        <strong>Lines:</strong> 75-102
+    </div>
+
+    <h4>A. Flowchart</h4>
+    <div class="diagram">
+@startuml flowchart_kerusakan_store
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Generate Next ID (Kerusakan::max('id') + 1);
+  :Create Kerusakan Record (Kerusakan::create());
+  :Get New Kerusakan ID;
+  :Create Perbaikan Record (Perbaikan::create());
+  :Redirect to kerusakans.index with Success;
+  stop
+endif
+@enduml
+    </div>
+
+    <h4>B. Flow Graph</h4>
+    <div class="diagram">
+@startuml flowgraph_kerusakan_store
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nGenerate ID"];
+  7 [label="7\nCreate Kerusakan"];
+  8 [label="8\nGet New ID"];
+  9 [label="9\nCreate Perbaikan"];
+  10 [label="10\nSuccess"];
+  11 [label="11\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 11;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9;
+  9 -> 10;
+  10 -> 11;
+}
+@enduml
+    </div>
+
+    <h4>C. Cyclomatic Complexity</h4>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Jumlah Node (N)</td>
+            <td>11</td>
+        </tr>
+        <tr>
+            <td>Jumlah Edge (E)</td>
+            <td>10</td>
+        </tr>
+        <tr>
+            <td>Jumlah Predicate (P)</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td><strong>Cyclomatic Complexity</strong><br>V(G) = E - N + 2</td>
+            <td><strong>2</strong></td>
+        </tr>
+    </table>
+
+    <h4>D. Basis Path Testing</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Path</th>
+                <th>Jalur</th>
+                <th>Test Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Path 1</td>
+                <td>1→2→3→4→5→11</td>
+                <td>Validasi gagal</td>
+            </tr>
+            <tr>
+                <td>Path 2</td>
+                <td>1→2→3→4→6→7→8→9→10→11</td>
+                <td>Validasi sukses, kerusakan dan perbaikan dibuat</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h3>4. Kerusakan Update (Assign Teknisi)</h3>
+
+    <div class="code-ref">
+        <strong>File:</strong> app/Http/Controllers/KerusakanController.php<br>
+        <strong>Function:</strong> update()<br>
+        <strong>Lines:</strong> 117-168
+    </div>
+
+    <h4>A. Flowchart</h4>
+    <div class="diagram">
+@startuml flowchart_kerusakan_update
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Begin Transaction (DB::beginTransaction());
+  try {
+    :Find Kerusakan by ID (Kerusakan::findOrFail($id));
+    :Update Kerusakan Status;
+    if (Status = "Dalam Perbaikan" AND teknisi_id exists?) then (Ya)
+      :Check Existing Perbaikan (Perbaikan::where('kerusakan_id'));
+      if (Perbaikan Exists?) then (Ya)
+        :Rollback Transaction (DB::rollBack());
+        :Redirect with Error "Perbaikan sudah ada";
+        stop
+      else (Tidak)
+        :Create Perbaikan Record (Perbaikan::create());
+      endif
+    endif
+    :Commit Transaction (DB::commit());
+    :Redirect with Success;
+    stop
+  } catch (Exception) {
+    :Rollback Transaction (DB::rollBack());
+    :Redirect Back with Error;
+    stop
+  }
+endif
+@enduml
+    </div>
+
+    <h4>B. Flow Graph</h4>
+    <div class="diagram">
+@startuml flowgraph_kerusakan_update
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nBegin Transaction"];
+  7 [label="7\nFind Kerusakan"];
+  8 [label="8\nUpdate Status"];
+  9 [label="9\nCheck Status"];
+  10 [label="10\nCheck Existing"];
+  11 [label="11\nRollback"];
+  12 [label="13\nError"];
+  13 [label="14\nCreate Perbaikan"];
+  14 [label="15\nCommit"];
+  15 [label="16\nSuccess"];
+  16 [label="17\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 16;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9;
+  9 -> 10 [label="Dalam Perbaikan"];
+  9 -> 14 [label="lainnya"];
+  10 -> 11 [label="exists"];
+  10 -> 13 [label="not exists"];
+  11 -> 12;
+  12 -> 16;
+  13 -> 14;
+  14 -> 15;
+  15 -> 16;
+}
+@enduml
+    </div>
+
+    <h4>C. Cyclomatic Complexity</h4>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Jumlah Node (N)</td>
+            <td>16</td>
+        </tr>
+        <tr>
+            <td>Jumlah Edge (E)</td>
+            <td>16</td>
+        </tr>
+        <tr>
+            <td>Jumlah Predicate (P)</td>
+            <td>2</td>
+        </tr>
+        <tr>
+            <td><strong>Cyclomatic Complexity</strong><br>V(G) = E - N + 2</td>
+            <td><strong>2</strong></td>
+        </tr>
+    </table>
+
+    <h4>D. Basis Path Testing</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Path</th>
+                <th>Jalur</th>
+                <th>Test Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Path 1</td>
+                <td>1→2→3→4→5→16</td>
+                <td>Validasi gagal</td>
+            </tr>
+            <tr>
+                <td>Path 2</td>
+                <td>1→2→3→4→6→7→8→9→10→11→12→16</td>
+                <td>Perbaikan sudah ada, rollback dan error</td>
+            </tr>
+            <tr>
+                <td>Path 3</td>
+                <td>1→2→3→4→6→7→8→9→10→13→14→15→16</td>
+                <td>Status Dalam Perbaikan, perbaikan baru dibuat</td>
+            </tr>
+            <tr>
+                <td>Path 4</td>
+                <td>1→2→3→4→6→7→8→9→14→15→16</td>
+                <td>Status lain, hanya update status</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h3>5. Perbaikan Update</h3>
+
+    <div class="code-ref">
+        <strong>File:</strong> app/Http/Controllers/PerbaikanController.php<br>
+        <strong>Function:</strong> update()<br>
+        <strong>Lines:</strong> 47-78
+    </div>
+
+    <h4>A. Flowchart</h4>
+    <div class="diagram">
+@startuml flowchart_perbaikan_update
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Find Perbaikan by ID (Perbaikan::with('kerusakan')->findOrFail($id));
+  :Prepare Update Data;
+  if (Kerusakan Status != Selesai?) then (Ya)
+    :Update Kerusakan Status -> Selesai;
+    :Set waktu_selesai = now();
+  endif
+  :Update Perbaikan Record ($perbaikan->update());
+  :Redirect with Success;
+  stop
+endif
+@enduml
+    </div>
+
+    <h4>B. Flow Graph</h4>
+    <div class="diagram">
+@startuml flowgraph_perbaikan_update
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nFind Perbaikan"];
+  7 [label="7\nPrepare Data"];
+  8 [label="8\nCheck Status"];
+  9 [label="9\nUpdate Kerusakan"];
+  10 [label="10\nSet waktu_selesai"];
+  11 [label="11\nUpdate Record"];
+  12 [label="12\nSuccess"];
+  13 [label="13\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 13;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9 [label="!= Selesai"];
+  8 -> 11 [label="== Selesai"];
+  9 -> 10;
+  10 -> 11;
+  11 -> 12;
+  12 -> 13;
+}
+@enduml
+    </div>
+
+    <h4>C. Cyclomatic Complexity</h4>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Jumlah Node (N)</td>
+            <td>13</td>
+        </tr>
+        <tr>
+            <td>Jumlah Edge (E)</td>
+            <td>12</td>
+        </tr>
+        <tr>
+            <td>Jumlah Predicate (P)</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td><strong>Cyclomatic Complexity</strong><br>V(G) = E - N + 2</td>
+            <td><strong>2</strong></td>
+        </tr>
+    </table>
+
+    <h4>D. Basis Path Testing</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Path</th>
+                <th>Jalur</th>
+                <th>Test Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Path 1</td>
+                <td>1→2→3→4→5→13</td>
+                <td>Validasi gagal</td>
+            </tr>
+            <tr>
+                <td>Path 2</td>
+                <td>1→2→3→4→6→7→8→9→10→11→12→13</td>
+                <td>Kerusakan belum selesai, update kerusakan dan perbaikan</td>
+            </tr>
+            <tr>
+                <td>Path 3</td>
+                <td>1→2→3→4→6→7→8→11→12→13</td>
+                <td>Kerusakan sudah selesai, hanya update perbaikan</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h3>6. User Update Role</h3>
+
+    <div class="code-ref">
+        <strong>File:</strong> app/Http/Controllers/UserController.php<br>
+        <strong>Function:</strong> updateRole()<br>
+        <strong>Lines:</strong> 32-51
+    </div>
+
+    <h4>A. Flowchart</h4>
+    <div class="diagram">
+@startuml flowchart_user_update_role
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Admin Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Find User by ID (User::findOrFail($id));
+  if (Current User ID = Target ID AND New Role != Admin?) then (Ya)
+    :Return Error "Admin tidak dapat mengubah role diri sendiri dari admin";
+    stop
+  else (Tidak)
+    :Update User Role ($user->update(['role']));
+    :Redirect Back with Success;
+    stop
+  endif
+endif
+@enduml
+    </div>
+
+    <h4>B. Flow Graph</h4>
+    <div class="diagram">
+@startuml flowgraph_user_update_role
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nAdmin Check"];
+  5 [label="5\nValidate"];
+  6 [label="6\nError Validasi"];
+  7 [label="7\nFind User"];
+  8 [label="8\nCheck Self & Role"];
+  9 [label="9\nError Self"];
+  10 [label="10\nUpdate Role"];
+  11 [label="11\nSuccess"];
+  12 [label="12\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5;
+  5 -> 6 [label="fails"];
+  5 -> 7 [label="passes"];
+  6 -> 12;
+  7 -> 8;
+  8 -> 9 [label="self & !admin"];
+  8 -> 10 [label="else"];
+  9 -> 12;
+  10 -> 11;
+  11 -> 12;
+}
+@enduml
+    </div>
+
+    <h4>C. Cyclomatic Complexity</h4>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Jumlah Node (N)</td>
+            <td>12</td>
+        </tr>
+        <tr>
+            <td>Jumlah Edge (E)</td>
+            <td>12</td>
+        </tr>
+        <tr>
+            <td>Jumlah Predicate (P)</td>
+            <td>2</td>
+        </tr>
+        <tr>
+            <td><strong>Cyclomatic Complexity</strong><br>V(G) = E - N + 2</td>
+            <td><strong>2</strong></td>
+        </tr>
+    </table>
+
+    <h4>D. Basis Path Testing</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Path</th>
+                <th>Jalur</th>
+                <th>Test Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Path 1</td>
+                <td>1→2→3→4→5→6→12</td>
+                <td>Validasi gagal</td>
+            </tr>
+            <tr>
+                <td>Path 2</td>
+                <td>1→2→3→4→5→7→8→9→12</td>
+                <td>Coba ubah role diri sendiri dari admin</td>
+            </tr>
+            <tr>
+                <td>Path 3</td>
+                <td>1→2→3→4→5→7→8→10→11→12</td>
+                <td>Update role user lain berhasil</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h3>7. Export Kerusakan (Excel/PDF)</h3>
+
+    <div class="code-ref">
+        <strong>File:</strong> app/Http/Controllers/ExcelExportController.php<br>
+        <strong>Function:</strong> reportKerusakan()<br>
+        <strong>Lines:</strong> 20-33
+    </div>
+
+    <h4>A. Flowchart</h4>
+    <div class="diagram">
+@startuml flowchart_export_kerusakan
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Admin Middleware Check;
+:Get Month & Year ($request->get('month', 'year'));
+:Query Kerusakan (Kerusakan::with('mesin', 'user')->whereYear()->whereMonth());
+:Create Exporter Instance (new ExportDatakerusakan());
+:Generate Export File ($exporter->generate() OR $exporter->generatePdf());
+:Return Download File;
+stop
+@enduml
+    </div>
+
+    <h4>B. Flow Graph</h4>
+    <div class="diagram">
+@startuml flowgraph_export_kerusakan
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nAdmin Check"];
+  5 [label="5\nGet Month"];
+  6 [label="6\nQuery Kerusakan"];
+  7 [label="7\nCreate Exporter"];
+  8 [label="8\nGenerate File"];
+  9 [label="9\nReturn Download"];
+  10 [label="10\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5;
+  5 -> 6;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9;
+  9 -> 10;
+}
+@enduml
+    </div>
+
+    <h4>C. Cyclomatic Complexity</h4>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Jumlah Node (N)</td>
+            <td>10</td>
+        </tr>
+        <tr>
+            <td>Jumlah Edge (E)</td>
+            <td>9</td>
+        </tr>
+        <tr>
+            <td>Jumlah Predicate (P)</td>
+            <td>0</td>
+        </tr>
+        <tr>
+            <td><strong>Cyclomatic Complexity</strong><br>V(G) = E - N + 2</td>
+            <td><strong>1</strong></td>
+        </tr>
+    </table>
+
+    <h4>D. Basis Path Testing</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Path</th>
+                <th>Jalur</th>
+                <th>Test Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Path 1</td>
+                <td>1→2→3→4→5→6→7→8→9→10</td>
+                <td>Admin export data kerusakan berhasil</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h3>Ringkasan White Box Testing</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Fitur</th>
+                <th>Cyclomatic Complexity</th>
+                <th>Jumlah Path</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Dashboard Index</td>
+                <td>1</td>
+                <td>1</td>
+                <td>✓ Tested</td>
+            </tr>
+            <tr>
+                <td>Mesin Store</td>
+                <td>3</td>
+                <td>3</td>
+                <td>✓ Tested</td>
+            </tr>
+            <tr>
+                <td>Kerusakan Store</td>
+                <td>2</td>
+                <td>2</td>
+                <td>✓ Tested</td>
+            </tr>
+            <tr>
+                <td>Kerusakan Update (Assign)</td>
+                <td>2</td>
+                <td>4</td>
+                <td>✓ Tested</td>
+            </tr>
+            <tr>
+                <td>Perbaikan Update</td>
+                <td>2</td>
+                <td>3</td>
+                <td>✓ Tested</td>
+            </tr>
+            <tr>
+                <td>User Update Role</td>
+                <td>2</td>
+                <td>3</td>
+                <td>✓ Tested</td>
+            </tr>
+            <tr>
+                <td>Export Kerusakan</td>
+                <td>1</td>
+                <td>1</td>
+                <td>✓ Tested</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong>Kesimpulan:</strong> Semua fitur yang diuji memiliki Cyclomatic Complexity yang rendah (1-3), menunjukkan kode yang maintainable dan mudah untuk ditest. Semua basis path telah diidentifikasi dan diuji. Fungsi dengan complexity tertinggi adalah Mesin Store dan User Update Role dengan V(G) = 3, namun tetap dalam kategori yang baik (V(G) < 10).</p>
+
+</body>
+</html>

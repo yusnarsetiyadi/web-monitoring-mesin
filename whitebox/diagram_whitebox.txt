@@ -1,0 +1,616 @@
+=== 4. WHITE BOX TESTING - FLOWCHARTS ===
+
+--- 4.1 Flowchart: Dashboard Index ---
+
+@startuml flowchart_dashboard
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Query Jumlah Mesin (Mesin::count());
+:Query Jumlah User (User::count());
+:Query Total Perbaikan (Perbaikan::count());
+:Query Kerusakan Bulan Ini (Kerusakan::whereMonth);
+:Query List Teknisi (User::where('teknisi'));
+:Query Kerusakan Terbaru (Kerusakan::with('mesin')->latest());
+:Render Inertia View ('dashboard');
+stop
+@enduml
+
+
+--- 4.2 Flowchart: Mesin Index ---
+
+@startuml flowchart_mesin_index
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Get Search Query ($request->query('search'));
+if (Search Query Exists?) then (Ya)
+  :Query Mesin with Search (Mesin::when($search));
+else (Tidak)
+  :Query All Mesin (Mesin::get());
+endif
+:Render Inertia View ('mesin/index');
+stop
+@enduml
+
+
+--- 4.3 Flowchart: Mesin Store ---
+
+@startuml flowchart_mesin_store
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Generate Next ID (Mesin::max('id') + 1);
+  if (Has File gambar_mesin?) then (Ya)
+    :Store Image (->store('mesin_images', 'public'));
+  else (Tidak)
+    :Set gambarPath = null;
+  endif
+  :Create Mesin Record (Mesin::create());
+  :Redirect Back with Success;
+  stop
+endif
+@enduml
+
+
+--- 4.4 Flowchart: Mesin Update ---
+
+@startuml flowchart_mesin_update
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Find Mesin by ID (Mesin::findOrFail($id));
+  :Prepare Update Data;
+  if (Has New gambar_mesin?) then (Ya)
+    if (Old Image Exists?) then (Ya)
+      :Delete Old Image (Storage::disk('public')->delete());
+    endif
+    :Store New Image (->store('mesin_images', 'public'));
+  endif
+  :Update Mesin Record ($mesin->update());
+  :Redirect Back with Success;
+  stop
+endif
+@enduml
+
+
+--- 4.5 Flowchart: Mesin Destroy ---
+
+@startuml flowchart_mesin_destroy
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Find Mesin by ID (Mesin::findOrFail($id));
+try {
+  :Delete Mesin ($mesin->delete());
+  :Redirect Back with Success;
+} catch (QueryException) {
+  if (Error Code = 23000?) then (Ya)
+    :Return Error "Mesin tidak dapat dihapus karena masih digunakan";
+  else (Tidak)
+    :Return Error "Terjadi kesalahan saat menghapus data";
+  endif
+}
+stop
+@enduml
+
+
+--- 4.6 Flowchart: Kerusakan Index Operator ---
+
+@startuml flowchart_kerusakan_index
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Get Search Query ($request->query('search'));
+if (Search Query Exists?) then (Ya)
+  :Query Kerusakan with Search (Kerusakan::when($search)->whereAny());
+else (Tidak)
+  :Query All Kerusakan (Kerusakan::with(['mesin', 'user'])->get());
+endif
+:Query All Mesin (Mesin::all());
+:Query Teknisi (User::where('teknisi'));
+:Render Inertia View ('kerusakan/index');
+stop
+@enduml
+
+
+--- 4.7 Flowchart: Kerusakan Store ---
+
+@startuml flowchart_kerusakan_store
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Generate Next ID (Kerusakan::max('id') + 1);
+  :Create Kerusakan Record (Kerusakan::create());
+  :Get New Kerusakan ID;
+  :Create Perbaikan Record (Perbaikan::create());
+  :Redirect to kerusakans.index with Success;
+  stop
+endif
+@enduml
+
+
+--- 4.8 Flowchart: Kerusakan Assign ---
+
+@startuml flowchart_kerusakan_assign
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Query Teknisi List (User::where('teknisi')->get());
+:Find Kerusakan by ID (Kerusakan::findOrFail($id));
+:Render Inertia View ('kerusakan/assign');
+stop
+@enduml
+
+
+--- 4.9 Flowchart: Kerusakan Update (Assign) ---
+
+@startuml flowchart_kerusakan_update
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Begin Transaction (DB::beginTransaction());
+  try {
+    :Find Kerusakan by ID (Kerusakan::findOrFail($id));
+    :Update Kerusakan Status;
+    if (Status = "Dalam Perbaikan" AND teknisi_id exists?) then (Ya)
+      :Check Existing Perbaikan (Perbaikan::where('kerusakan_id'));
+      if (Perbaikan Exists?) then (Ya)
+        :Rollback Transaction (DB::rollBack());
+        :Redirect with Error "Perbaikan sudah ada";
+        stop
+      else (Tidak)
+        :Create Perbaikan Record (Perbaikan::create());
+      endif
+    endif
+    :Commit Transaction (DB::commit());
+    :Redirect with Success;
+    stop
+  } catch (Exception) {
+    :Rollback Transaction (DB::rollBack());
+    :Redirect Back with Error;
+    stop
+  }
+endif
+@enduml
+
+
+--- 4.10 Flowchart: Kerusakan Destroy ---
+
+@startuml flowchart_kerusakan_destroy
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+try {
+  :Find Kerusakan by ID (Kerusakan::findOrFail($id));
+  :Delete Kerusakan ($kerusakan->delete());
+  :Redirect Back with Success;
+} catch (QueryException) {
+  if (Error Code = 23000?) then (Ya)
+    :Return Error "Laporan tidak dapat dihapus karena masih digunakan";
+  else (Tidak)
+    :Return Error "Terjadi kesalahan saat menghapus data";
+  endif
+}
+stop
+@enduml
+
+
+--- 4.11 Flowchart: Perbaikan Index ---
+
+@startuml flowchart_perbaikan_index
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Get Search Query ($request->query('search'));
+:Build Query (Perbaikan::with(['kerusakan', 'teknisi', 'kerusakan.mesin']));
+if (User Role = Teknisi?) then (Ya)
+  :Filter by teknisi_id (->where('teknisi_id', Auth::id()));
+endif
+if (Search Query Exists?) then (Ya)
+  :Apply Search Filters (->where()->orWhere()->orWhereHas());
+endif
+:Execute Query (->latest()->get());
+:Render Inertia View ('perbaikan/index');
+stop
+@enduml
+
+
+--- 4.12 Flowchart: Perbaikan Update ---
+
+@startuml flowchart_perbaikan_update
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Find Perbaikan by ID (Perbaikan::with('kerusakan')->findOrFail($id));
+  :Prepare Update Data;
+  if (Kerusakan Status != Selesai?) then (Ya)
+    :Update Kerusakan Status -> Selesai;
+    :Set waktu_selesai = now();
+  endif
+  :Update Perbaikan Record ($perbaikan->update());
+  :Redirect with Success;
+  stop
+endif
+@enduml
+
+
+--- 4.13 Flowchart: Perbaikan History ---
+
+@startuml flowchart_perbaikan_history
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Get Search Query ($request->query('search'));
+:Build Query (Perbaikan::with(['kerusakan', 'teknisi', 'kerusakan.mesin']));
+:Filter by Kerusakan Status = Selesai (->whereHas('kerusakan'));
+if (Search Query Exists?) then (Ya)
+  :Apply Search Filters (->where()->orWhere()->orWhereHas());
+endif
+:Execute Query (->latest()->get());
+:Render Inertia View ('perbaikan/history');
+stop
+@enduml
+
+
+--- 4.14 Flowchart: User Index ---
+
+@startuml flowchart_user_index
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Admin Middleware Check;
+:Get Search Query ($request->query('search'));
+if (Search Query Exists?) then (Ya)
+  :Query Users with Search (User::when($search)->where()->orWhere());
+else (Tidak)
+  :Query All Users (User::get());
+endif
+:Render Inertia View ('users/index');
+stop
+@enduml
+
+
+--- 4.15 Flowchart: User Update Role ---
+
+@startuml flowchart_user_update_role
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Admin Middleware Check;
+:Validate Request;
+if (Validation Fails?) then (Ya)
+  :Return Validation Error;
+  stop
+else (Tidak)
+  :Find User by ID (User::findOrFail($id));
+  if (Current User ID = Target ID AND New Role != Admin?) then (Ya)
+    :Return Error "Admin tidak dapat mengubah role diri sendiri dari admin";
+    stop
+  else (Tidak)
+    :Update User Role ($user->update(['role']));
+    :Redirect Back with Success;
+    stop
+  endif
+endif
+@enduml
+
+
+--- 4.16 Flowchart: Export Kerusakan (Excel/PDF) ---
+
+@startuml flowchart_export_kerusakan
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Admin Middleware Check;
+:Get Month & Year ($request->get('month', 'year'));
+:Query Kerusakan (Kerusakan::with('mesin', 'user')->whereYear()->whereMonth());
+:Create Exporter Instance (new ExportDatakerusakan());
+:Generate Export File ($exporter->generate() OR $exporter->generatePdf());
+:Return Download File;
+stop
+@enduml
+
+
+--- 4.17 Flowchart: Export Perbaikan (Excel/PDF) ---
+
+@startuml flowchart_export_perbaikan
+start
+:Auth Middleware Check;
+:Verified Middleware Check;
+:Admin Middleware Check;
+:Get Month & Year ($request->get('month', 'year'));
+:Query Perbaikan (Perbaikan::with('kerusakan', 'teknisi')->whereYear()->whereMonth());
+:Create Exporter Instance (new ExportDataPerbaikan());
+:Generate Export File ($exporter->generate() OR $exporter->generatePdf());
+:Return Download File;
+stop
+@enduml
+
+
+=== 5. WHITE BOX TESTING - FLOW GRAPHS ===
+
+--- 5.1 Flow Graph: Dashboard Index ---
+
+@startuml flowgraph_dashboard
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nQuery Mesin"];
+  5 [label="5\nQuery User"];
+  6 [label="6\nQuery Perbaikan"];
+  7 [label="7\nQuery Kerusakan Bulan"];
+  8 [label="8\nQuery Teknisi"];
+  9 [label="9\nQuery Kerusakan Terbaru"];
+  10 [label="10\nRender View"];
+  11 [label="11\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5;
+  5 -> 6;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9;
+  9 -> 10;
+  10 -> 11;
+}
+@enduml
+
+
+--- 5.2 Flow Graph: Mesin Store ---
+
+@startuml flowgraph_mesin_store
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nGenerate ID"];
+  7 [label="7\nCheck File"];
+  8 [label="8\nStore Image"];
+  9 [label="9\nSet Null"];
+  10 [label="10\nCreate Record"];
+  11 [label="11\nSuccess"];
+  12 [label="12\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 12;
+  6 -> 7;
+  7 -> 8 [label="has file"];
+  7 -> 9 [label="no file"];
+  8 -> 10;
+  9 -> 10;
+  10 -> 11;
+  11 -> 12;
+}
+@enduml
+
+
+--- 5.3 Flow Graph: Mesin Update ---
+
+@startuml flowgraph_mesin_update
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nFind Mesin"];
+  7 [label="7\nPrepare Data"];
+  8 [label="8\nCheck New File"];
+  9 [label="9\nCheck Old Image"];
+  10 [label="10\nDelete Old"];
+  11 [label="12\nStore New"];
+  12 [label="13\nUpdate Record"];
+  13 [label="14\nSuccess"];
+  14 [label="15\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 14;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9 [label="has file"];
+  8 -> 12 [label="no file"];
+  9 -> 10 [label="exists"];
+  9 -> 11 [label="not exists"];
+  10 -> 11;
+  11 -> 12;
+  12 -> 13;
+  13 -> 14;
+}
+@enduml
+
+
+--- 5.4 Flow Graph: Kerusakan Store ---
+
+@startuml flowgraph_kerusakan_store
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nGenerate ID"];
+  7 [label="7\nCreate Kerusakan"];
+  8 [label="8\nGet New ID"];
+  9 [label="9\nCreate Perbaikan"];
+  10 [label="10\nSuccess"];
+  11 [label="11\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 11;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9;
+  9 -> 10;
+  10 -> 11;
+}
+@enduml
+
+
+--- 5.5 Flow Graph: Kerusakan Update (Assign) ---
+
+@startuml flowgraph_kerusakan_update
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nBegin Transaction"];
+  7 [label="7\nFind Kerusakan"];
+  8 [label="8\nUpdate Status"];
+  9 [label="9\nCheck Status"];
+  10 [label="10\nCheck Existing"];
+  11 [label="11\nRollback"];
+  12 [label="13\nError"];
+  13 [label="14\nCreate Perbaikan"];
+  14 [label="15\nCommit"];
+  15 [label="16\nSuccess"];
+  16 [label="17\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 16;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9;
+  9 -> 10 [label="Dalam Perbaikan"];
+  9 -> 14 [label="lainnya"];
+  10 -> 11 [label="exists"];
+  10 -> 13 [label="not exists"];
+  11 -> 12;
+  12 -> 16;
+  13 -> 14;
+  14 -> 15;
+  15 -> 16;
+}
+@enduml
+
+
+--- 5.6 Flow Graph: Perbaikan Update ---
+
+@startuml flowgraph_perbaikan_update
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nValidate"];
+  5 [label="5\nError Validasi"];
+  6 [label="6\nFind Perbaikan"];
+  7 [label="7\nPrepare Data"];
+  8 [label="8\nCheck Status"];
+  9 [label="9\nUpdate Kerusakan"];
+  10 [label="10\nSet waktu_selesai"];
+  11 [label="11\nUpdate Record"];
+  12 [label="12\nSuccess"];
+  13 [label="13\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5 [label="fails"];
+  4 -> 6 [label="passes"];
+  5 -> 13;
+  6 -> 7;
+  7 -> 8;
+  8 -> 9 [label="!= Selesai"];
+  8 -> 11 [label="== Selesai"];
+  9 -> 10;
+  10 -> 11;
+  11 -> 12;
+  12 -> 13;
+}
+@enduml
+
+
+--- 5.7 Flow Graph: User Update Role ---
+
+@startuml flowgraph_user_update_role
+digraph G {
+  node [shape=circle, fontsize=10];
+
+  1 [label="1\nStart"];
+  2 [label="2\nAuth Check"];
+  3 [label="3\nVerified Check"];
+  4 [label="4\nAdmin Check"];
+  5 [label="5\nValidate"];
+  6 [label="6\nError Validasi"];
+  7 [label="7\nFind User"];
+  8 [label="8\nCheck Self & Role"];
+  9 [label="9\nError Self"];
+  10 [label="10\nUpdate Role"];
+  11 [label="11\nSuccess"];
+  12 [label="12\nEnd"];
+
+  1 -> 2;
+  2 -> 3;
+  3 -> 4;
+  4 -> 5;
+  5 -> 6 [label="fails"];
+  5 -> 7 [label="passes"];
+  6 -> 12;
+  7 -> 8;
+  8 -> 9 [label="self & !admin"];
+  8 -> 10 [label="else"];
+  9 -> 12;
+  10 -> 11;
+  11 -> 12;
+}
+@enduml

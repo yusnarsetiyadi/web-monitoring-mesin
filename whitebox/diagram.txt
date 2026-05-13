@@ -1,0 +1,311 @@
+=== 1. ACTIVITY DIAGRAMS ===
+
+--- 1.1 Activity: Lapor Kerusakan Mesin ---
+
+@startuml activity_lapor_kerusakan
+start
+:Login ke Sistem;
+:Pilih Mesin;
+:Isi Deskripsi Kerusakan;
+:Pilih Teknisi;
+:Submit Laporan;
+:Kode Kerusakan Dibuat;
+:Perbaikan Otomatis Dibuat;
+stop
+@enduml
+
+
+--- 1.2 Activity: Assign Teknisi ke Kerusakan ---
+
+@startuml activity_assign_teknisi
+start
+:Login sebagai Admin;
+:Pilih Kerusakan;
+:Buka Halaman Assign;
+:Pilih Teknisi;
+:Set Status "Dalam Perbaikan";
+:Submit Assignment;
+:Perbaikan Record Dibuat;
+stop
+@enduml
+
+
+--- 1.3 Activity: Update Perbaikan ---
+
+@startuml activity_update_perbaikan
+start
+:Login sebagai Teknisi;
+:Pilih Perbaikan;
+:Isi Tindakan;
+:Isi Sparepart;
+:Isi Catatan (Opsional);
+:Submit Update;
+:Status Kerusakan "Selesai";
+:Waktu Selesai Diset;
+stop
+@enduml
+
+
+--- 1.4 Activity: Tambah Mesin Baru ---
+
+@startuml activity_tambah_mesin
+start
+:Login sebagai Admin;
+:Buka Menu Mesin;
+:Isi Kode Mesin;
+:Isi Nama Mesin;
+:Isi Lokasi;
+:Isi Kategori;
+:Upload Gambar (Opsional);
+:Submit Data;
+:Mesin Baru Disimpan;
+stop
+@enduml
+
+
+--- 1.5 Activity: Export Laporan ---
+
+@startuml activity_export_laporan
+start
+:Login sebagai Admin;
+:Buka Menu Report;
+:Pilih Jenis Laporan;
+:Pilih Bulan;
+:Pilih Tahun;
+:Pilih Format (Excel/PDF);
+:Generate Laporan;
+:Download File;
+stop
+@enduml
+
+
+--- 1.6 Activity: Update Role User ---
+
+@startuml activity_update_role
+start
+:Login sebagai Admin;
+:Buka Menu Users;
+:Pilih User;
+:Pilih Role Baru;
+:Submit Update;
+:Role User Diperbarui;
+stop
+@enduml
+
+
+=== 2. SEQUENCE DIAGRAMS ===
+
+--- 2.1 Sequence: Lapor Kerusakan ---
+
+@startuml sequence_lapor_kerusakan
+actor "Operator" as operator
+participant "KerusakanController" as controller
+participant "Kerusakan Model" as kerusakanModel
+participant "Perbaikan Model" as perbaikanModel
+
+operator -> controller: Submit Laporan Kerusakan
+controller -> kerusakanModel: Create Kerusakan
+kerusakanModel --> controller: Kerusakan Created
+controller -> perbaikanModel: Create Perbaikan
+perbaikanModel --> controller: Perbaikan Created
+controller --> operator: Redirect ke Daftar Kerusakan
+@enduml
+
+
+--- 2.2 Sequence: Assign Teknisi ke Kerusakan ---
+
+@startuml sequence_assign_teknisi
+actor "Admin" as admin
+participant "KerusakanController" as controller
+participant "Kerusakan Model" as kerusakanModel
+participant "Perbaikan Model" as perbaikanModel
+
+admin -> controller: Assign Teknisi ke Kerusakan
+controller -> kerusakanModel: Update Status
+kerusakanModel --> controller: Status Updated
+controller -> perbaikanModel: Create Perbaikan
+perbaikanModel --> controller: Perbaikan Created
+controller --> admin: Redirect dengan Success
+@enduml
+
+
+--- 2.3 Sequence: Update Perbaikan ---
+
+@startuml sequence_update_perbaikan
+actor "Teknisi" as teknisi
+participant "PerbaikanController" as controller
+participant "Perbaikan Model" as perbaikanModel
+participant "Kerusakan Model" as kerusakanModel
+
+teknisi -> controller: Submit Update Perbaikan
+controller -> perbaikanModel: Update Tindakan & Sparepart
+perbaikanModel --> controller: Perbaikan Updated
+controller -> kerusakanModel: Update Status ke Selesai
+kerusakanModel --> controller: Status Updated
+controller --> teknisi: Redirect dengan Success
+@enduml
+
+
+--- 2.4 Sequence: Export Laporan ---
+
+@startuml sequence_export_laporan
+actor "Admin" as admin
+participant "ExportController" as controller
+participant "Kerusakan Model" as kerusakanModel
+participant "Exporter" as exporter
+
+admin -> controller: Request Export Laporan
+controller -> kerusakanModel: Query Kerusakan by Bulan/Tahun
+kerusakanModel --> controller: Kerusakan Data
+controller -> exporter: Generate File
+exporter --> controller: File Generated
+controller --> admin: Return Download File
+@enduml
+
+
+=== 3. CLASS DIAGRAMS ===
+
+--- 3.1 Class: Domain Entities ---
+
+@startuml class_domain
+class User {
+  - id: int
+  - name: string
+  - email: string
+  - role: UserRole
+  - password: string
+  + kerusakan(): HasMany
+  + perbaikan(): HasMany
+}
+
+class Mesin {
+  - id: int
+  - kode_mesin: string
+  - nama_mesin: string
+  - lokasi: string
+  - kategori: string
+  - gambar_mesin: string
+  + kerusakan(): HasMany
+}
+
+class Kerusakan {
+  - id: int
+  - mesin_id: int
+  - user_id: int
+  - kode_kerusakan: string
+  - deskripsi: string
+  - status: StatusKerusakan
+  - waktu_lapor: DateTime
+  + mesin(): BelongsTo
+  + user(): BelongsTo
+}
+
+class Perbaikan {
+  - id: int
+  - kerusakan_id: int
+  - teknisi_id: int
+  - tindakan: string
+  - sparepart: string
+  - waktu_mulai: DateTime
+  - waktu_selesai: DateTime
+  - catatan: string
+  + kerusakan(): BelongsTo
+  + teknisi(): BelongsTo
+}
+
+enum StatusKerusakan {
+  Menunggu
+  DalamPerbaikan
+  Selesai
+}
+
+enum UserRole {
+  Admin
+  Operator
+  Teknisi
+}
+
+User "1" --> "*" Kerusakan : melapor
+User "1" --> "*" Perbaikan : melakukan
+Mesin "1" --> "*" Kerusakan : memiliki
+Kerusakan "1" --> "1" Perbaikan : diperbaiki
+Perbaikan "1" --> "1" User : oleh
+Kerusakan "1" --> "1" Mesin : pada
+Kerusakan --> StatusKerusakan
+User --> UserRole
+
+note right of Kerusakan
+  Kerusakan merepresentasikan
+  laporan kerusakan mesin
+  yang dibuat oleh operator
+end note
+
+note right of Perbaikan
+  Perbaikan merepresentasikan
+  tindakan perbaikan yang
+  dilakukan oleh teknisi
+end note
+@enduml
+
+
+=== 4. RELATIONSHIP DIAGRAMS ===
+
+--- 4.1 Entity Relationship: Kerusakan dan Perbaikan ---
+
+@startuml er_kerusakan_perbaikan
+entity "Mesin" as mesin {
+  *id: int
+  --
+  *kode_mesin: string
+  *nama_mesin: string
+  *lokasi: string
+  *kategori: string
+}
+
+entity "User" as user {
+  *id: int
+  --
+  *name: string
+  *email: string
+  *role: enum
+}
+
+entity "Kerusakan" as kerusakan {
+  *id: int
+  --
+  *mesin_id: int
+  *user_id: int
+  *kode_kerusakan: string
+  *deskripsi: string
+  *status: enum
+  *waktu_lapor: datetime
+}
+
+entity "Perbaikan" as perbaikan {
+  *id: int
+  --
+  *kerusakan_id: int
+  *teknisi_id: int
+  *tindakan: string
+  *sparepart: string
+  *waktu_mulai: datetime
+  *waktu_selesai: datetime
+  *catatan: string
+}
+
+mesin ||--o{ kerusakan : "memiliki"
+user ||--o{ kerusakan : "melapor"
+user ||--o{ perbaikan : "melakukan"
+kerusakan ||--o| perbaikan : "diperbaiki"
+
+note right of kerusakan
+  Setiap kerusakan
+  memiliki 1 mesin dan 1 user pelapor
+end note
+
+note right of perbaikan
+  Setiap perbaikan
+  terkait dengan 1 kerusakan
+  dan 1 teknisi
+end note
+@enduml
