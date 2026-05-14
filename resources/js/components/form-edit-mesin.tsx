@@ -123,7 +123,7 @@ const EditMesin = ({mesin} : EditMesinProps) => {
                                     <div className="mt-2">
                                         <p className="text-xs text-gray-500 mb-1">Gambar saat ini:</p>
                                         <img
-                                        src={`/storage/${mesin.gambar_mesin}`}
+                                        src={`/file/${mesin.gambar_mesin}`}
                                         alt={mesin.nama_mesin}
                                         className="w-32 h-32 object-cover rounded-lg border"
                                         />

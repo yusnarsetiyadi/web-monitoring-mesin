@@ -39,7 +39,7 @@ export const columns: ColumnDef<Mesin>[] = [
       const mesin = row.original
       return mesin.gambar_mesin ? (
         <img
-          src={`/storage/${mesin.gambar_mesin}`}
+          src={`/file/${mesin.gambar_mesin}`}
           alt={mesin.nama_mesin}
           className="w-16 h-16 object-cover rounded-md border"
         />

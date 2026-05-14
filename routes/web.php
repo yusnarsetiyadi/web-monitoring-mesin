@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExcelExportController;
+use App\Http\Controllers\FileServeController;
 use App\Http\Controllers\PdfExportController;
 use App\Http\Controllers\KerusakanController;
 use App\Http\Controllers\MesinController;
@@ -11,8 +12,13 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('auth/login');   
+    return Inertia::render('auth/login');
 })->name('home');
+
+// Serve storage files — bypass InfinityFree symlink/hotlink restrictions
+Route::get('/file/{path}', [FileServeController::class, 'serve'])
+    ->where('path', '.*')
+    ->name('file.serve');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
